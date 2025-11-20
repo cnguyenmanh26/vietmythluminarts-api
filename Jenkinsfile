@@ -1,31 +1,30 @@
 pipeline {
     agent any
     
-    // ============================================================
-    // KHU VỰC CẤU HÌNH (CHỈ CẦN SỬA Ở ĐÂY)
-    // ============================================================
+    // 1. KHẮC PHỤC LỖI DOCKER API (Client version too new)
     environment {
+        DOCKER_API_VERSION = '1.43' 
+        
+        // ============================================================
+        // KHU VỰC CẤU HÌNH
+        // ============================================================
         // 1. CẤU HÌNH GIT
-        GIT_REPO_URL   = 'https://github.com/cnguyenmanh26/vietmythluminarts-api.git'
-        GIT_BRANCH     = 'main'
+        GIT_REPO_URL    = 'https://github.com/cnguyenmanh26/vietmythluminarts-api.git'
+        GIT_BRANCH      = 'main'
 
         // 2. CẤU HÌNH DOCKER CONTAINER
-        // Tên container (Bắt buộc phải là 'backend' để khớp với Nginx của bạn)
-        CONTAINER_NAME = 'backend'
-        // Tên Image (Đặt tùy ý)
-        IMAGE_NAME     = 'vietmyth-backend-image'
-        
+        CONTAINER_NAME  = 'backend'             // Bắt buộc khớp với Nginx
+        IMAGE_NAME      = 'vietmyth-backend-image'
+
         // 3. CẤU HÌNH MẠNG & MÔI TRƯỜNG SERVER
-        // Tên mạng Docker (Kiểm tra bằng lệnh: docker network ls)
-        NETWORK_NAME   = 'home_default'
-        // Đường dẫn tuyệt đối tới file .env trên Server
-        ENV_FILE_PATH  = '/home/back-end/.env'
-        // Port nội bộ của ứng dụng (NodeJS thường là 3000 hoặc 5000)
-        APP_PORT       = '5000'
+        NETWORK_NAME    = 'home_default'        // Check lại: docker network ls
+        
+        // ĐƯỜNG DẪN FILE .ENV (Nằm trên Server thật - Cần đường dẫn tuyệt đối)
+        // Đã sửa lỗi chính tả 'bac-end' -> 'back-end'
+        ENV_FILE_PATH   = '/home/back-end/.env' 
+        
+        APP_PORT        = '5000'
     }
-    // ============================================================
-    // HẾT PHẦN CẤU HÌNH - KHÔNG CẦN SỬA DƯỚI NÀY
-    // ============================================================
 
     stages {
         stage('1. Checkout Code') {
@@ -41,7 +40,10 @@ pipeline {
             steps {
                 script {
                     echo "--- Đang Build Image: ${IMAGE_NAME} ---"
-                    // Build từ thư mục gốc (.)
+                    
+                    // SỬA LỖI QUAN TRỌNG TẠI ĐÂY:
+                    // Không dùng đường dẫn /home/... vì Jenkins build từ code Git vừa tải về.
+                    // Dấu chấm (.) nghĩa là tìm Dockerfile ngay tại thư mục gốc của Git.
                     sh "docker build -t ${IMAGE_NAME}:latest ."
                 }
             }
@@ -58,7 +60,7 @@ pipeline {
                     // 2. Xóa container cũ
                     sh "docker rm ${CONTAINER_NAME} || true"
                     
-                    // 3. Chạy container mới với các biến đã khai báo
+                    // 3. Chạy container mới
                     sh """
                         docker run -d \
                         --name ${CONTAINER_NAME} \
@@ -83,7 +85,7 @@ pipeline {
         }
         always {
             // Dọn dẹp image rác
-            sh "docker image prune -f"
+            sh "docker image prune -f" 
         }
     }
 }
