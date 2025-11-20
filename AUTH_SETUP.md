@@ -7,7 +7,7 @@ Add these environment variables to your `.env` file:
 ```env
 # Server Configuration
 PORT=5000
-NODE_ENV=development
+NODE_ENV=sadsadsadsasasds
 
 # MongoDB Configuration
 MONGODB_URI=mongodb+srv://your-username:your-password@cluster.mongodb.net/wooden-toys?retryWrites=true&w=majority
