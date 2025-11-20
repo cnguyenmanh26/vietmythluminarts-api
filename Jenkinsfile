@@ -1,63 +1,47 @@
 pipeline {
     agent any
     
-    // 1. KHẮC PHỤC LỖI DOCKER API (Client version too new)
     environment {
-        DOCKER_API_VERSION = '1.43' 
+        DOCKER_API_VERSION = '1.43'
         
-        // ============================================================
-        // KHU VỰC CẤU HÌNH
-        // ============================================================
-        // 1. CẤU HÌNH GIT
+        // --- CẤU HÌNH CHUẨN ---
         GIT_REPO_URL    = 'https://github.com/cnguyenmanh26/vietmythluminarts-api.git'
         GIT_BRANCH      = 'main'
-
-        // 2. CẤU HÌNH DOCKER CONTAINER
-        CONTAINER_NAME  = 'backend'             // Bắt buộc khớp với Nginx
+        
+        CONTAINER_NAME  = 'backend'             // Container MỚI (Jenkins quản lý)
+        OLD_CONTAINER   = 'home-backend-1'      // Container CŨ (Docker Compose quản lý)
+        
         IMAGE_NAME      = 'vietmyth-backend-image'
-
-        // 3. CẤU HÌNH MẠNG & MÔI TRƯỜNG SERVER
-        NETWORK_NAME    = 'home_default'        // Check lại: docker network ls
-        
-        // ĐƯỜNG DẪN FILE .ENV (Nằm trên Server thật - Cần đường dẫn tuyệt đối)
-        // Đã sửa lỗi chính tả 'bac-end' -> 'back-end'
-        ENV_FILE_PATH   = '/home/back-end/.env' 
-        
+        NETWORK_NAME    = 'home_default'
+        ENV_FILE_PATH   = '/home/back-end/.env'
         APP_PORT        = '5000'
+        NGINX_CONTAINER = 'home-nginx-1'
     }
 
     stages {
-        stage('1. Checkout Code') {
+        stage('1. Checkout') {
             steps {
-                script {
-                    echo "--- Đang lấy code từ nhánh: ${GIT_BRANCH} ---"
-                    git branch: "${GIT_BRANCH}", url: "${GIT_REPO_URL}"
-                }
+                git branch: "${GIT_BRANCH}", url: "${GIT_REPO_URL}"
             }
         }
 
-        stage('2. Build Docker Image') {
+        stage('2. Build') {
             steps {
-                script {
-                    echo "--- Đang Build Image: ${IMAGE_NAME} ---"
-                    
-                    // SỬA LỖI QUAN TRỌNG TẠI ĐÂY:
-                    // Không dùng đường dẫn /home/... vì Jenkins build từ code Git vừa tải về.
-                    // Dấu chấm (.) nghĩa là tìm Dockerfile ngay tại thư mục gốc của Git.
-                    sh "docker build -t ${IMAGE_NAME}:latest ."
-                }
+                sh "docker build -t ${IMAGE_NAME}:latest ."
             }
         }
 
-        stage('3. Deploy Container') {
+        stage('3. Deploy (Dọn sạch sẽ)') {
             steps {
                 script {
-                    echo "--- Đang Deploy Container: ${CONTAINER_NAME} ---"
+                    // DÙNG || true ĐỂ KHÔNG BÁO LỖI NẾU KHÔNG TÌM THẤY
                     
-                    // 1. Dừng container cũ
+                    // 1. Diệt container cũ (nếu nó vô tình sống lại)
+                    sh "docker stop ${OLD_CONTAINER} || true"
+                    sh "docker rm ${OLD_CONTAINER} || true"
+                    
+                    // 2. Diệt container hiện tại (để cập nhật code mới)
                     sh "docker stop ${CONTAINER_NAME} || true"
-                    
-                    // 2. Xóa container cũ
                     sh "docker rm ${CONTAINER_NAME} || true"
                     
                     // 3. Chạy container mới
@@ -74,17 +58,18 @@ pipeline {
                 }
             }
         }
+
+        stage('4. Refresh Nginx') {
+            steps {
+                script {
+                    sh "docker exec ${NGINX_CONTAINER} nginx -s reload"
+                }
+            }
+        }
     }
     
     post {
-        success {
-            echo "✅ DEPLOY THÀNH CÔNG: ${CONTAINER_NAME}"
-        }
-        failure {
-            echo "❌ DEPLOY THẤT BẠI: Vui lòng kiểm tra Log"
-        }
         always {
-            // Dọn dẹp image rác
             sh "docker image prune -f" 
         }
     }
