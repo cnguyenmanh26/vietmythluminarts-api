@@ -5,8 +5,8 @@
 Add these environment variables to your `.env` file:
 
 ```env
-# Server Configuration
-PORT=50001232131232321231
+# Server Configurati
+PORT=5000123213123232123
 NODE_ENV=sadsadsadsasasds
 
 # MongoDB Configuration
