@@ -1,6 +1,6 @@
 # Cloudinary Implementation Summary
 
-## ✅ Đã hoàn thành
+## ✅ Đã hoàn thànhsssss
 
 ### 1. Dependencies
 - ✅ Thêm `cloudinary@^1.41.0` vào package.json
