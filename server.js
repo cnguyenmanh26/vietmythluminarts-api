@@ -29,6 +29,7 @@
   // CORS Configuration - Allow all origins in development
   if (process.env.NODE_ENV === 'production') {
     const allowedOrigins = [
+      "http://localhost:3000",
       process.env.CORS_ORIGIN,
     ].filter(Boolean);
 

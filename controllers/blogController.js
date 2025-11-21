@@ -133,6 +133,8 @@ export const getBlogByIdentifier = async (req, res) => {
 // @route   POST /api/blogs
 // @access  Private/Admin
 export const createBlog = async (req, res) => {
+  let blogData = null; // ✅ Khai báo NGOÀI try-catch block để có thể truy cập trong catch
+  
   try {
     const {
       title,
@@ -153,7 +155,7 @@ export const createBlog = async (req, res) => {
     }
 
     // Prepare blog data
-    const blogData = {
+    blogData = {
       title,
       content,
       excerpt,
